@@ -14,13 +14,31 @@ export function formatCurrency(value, currency = '$') {
 /**
  * Format date to readable string
  * @param {string|Date} date - Date to format
+ * @param {string} format - Format pattern (default: 'long', options: 'long', 'DD/MM/YYYY', 'MM/DD/YYYY', etc.)
  * @returns {string} Formatted date string
  */
-export function formatDate(date) {
+export function formatDate(date, format = 'long') {
     if (!date) return '';
     const d = new Date(date);
     if (isNaN(d.getTime())) return '';
     
+    // Handle DD/MM/YYYY format
+    if (format === 'DD/MM/YYYY') {
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+    
+    // Handle MM/DD/YYYY format
+    if (format === 'MM/DD/YYYY') {
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${month}/${day}/${year}`;
+    }
+    
+    // Default long format
     return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',

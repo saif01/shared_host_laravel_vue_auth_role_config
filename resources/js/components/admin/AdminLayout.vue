@@ -130,7 +130,7 @@
                 <div class="footer-info">
                     <span class="version-badge">{{ footerVersion || 'v1.0' }}</span>
                     <span class="copyright-text">© {{ currentYear }} {{ footerCopyrightText || 'All Rights Reserved'
-                    }}</span>
+                        }}</span>
                 </div>
             </div>
         </v-footer>
@@ -144,7 +144,7 @@
 import moment from 'moment';
 import { useAuthStore } from '../../stores/auth';
 import { resolveUploadUrl } from '../../utils/uploads';
-import UserProfileDialog from './users/UserProfileDialog.vue';
+import UserProfileDialog from './users/dialogs/UserProfileDialog.vue';
 
 export default {
     components: {

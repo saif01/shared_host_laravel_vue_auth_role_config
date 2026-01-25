@@ -20,7 +20,7 @@ class DemoDataSeeder extends Seeder
     {
         $settings = [
             // General Settings
-            ['key' => 'site_name', 'value' => 'MICRO CONTROL TECHNOLOGY', 'type' => 'text', 'group' => 'general'],
+            ['key' => 'site_name', 'value' => 'Business Name', 'type' => 'text', 'group' => 'general'],
             
             // Branding Settings
             ['key' => 'logo', 'value' => '', 'type' => 'image', 'group' => 'branding'],

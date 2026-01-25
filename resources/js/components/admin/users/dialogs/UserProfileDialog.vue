@@ -27,7 +27,8 @@
                             <v-icon v-else size="60" color="primary">mdi-account</v-icon>
                         </v-avatar>
                         <h2 class="text-h5 font-weight-bold mb-2">{{ user.name }}</h2>
-                        <div v-if="userRoles && userRoles.length > 0" class="d-flex flex-wrap justify-center gap-2 mb-2">
+                        <div v-if="userRoles && userRoles.length > 0"
+                            class="d-flex flex-wrap justify-center gap-2 mb-2">
                             <v-chip v-for="role in userRoles" :key="role.id" color="primary" variant="flat">
                                 {{ role.name }}
                             </v-chip>
@@ -95,7 +96,8 @@
                             <v-list-item-title>Assigned Roles</v-list-item-title>
                             <v-list-item-subtitle>
                                 <div class="d-flex flex-wrap gap-2 mt-2">
-                                    <v-chip v-for="role in userRoles" :key="role.id" size="small" color="primary" variant="outlined">
+                                    <v-chip v-for="role in userRoles" :key="role.id" size="small" color="primary"
+                                        variant="outlined">
                                         {{ role.name }}
                                     </v-chip>
                                 </div>
@@ -109,7 +111,8 @@
                             <v-list-item-title>Permissions</v-list-item-title>
                             <v-list-item-subtitle>
                                 <div class="d-flex flex-wrap gap-2 mt-2">
-                                    <v-chip v-for="permission in userPermissions" :key="permission" size="small" color="success" variant="outlined">
+                                    <v-chip v-for="permission in userPermissions" :key="permission" size="small"
+                                        color="success" variant="outlined">
                                         {{ permission }}
                                     </v-chip>
                                 </div>
@@ -155,7 +158,7 @@
 
 <script>
 import moment from 'moment';
-import { resolveUploadUrl } from '../../../utils/uploads';
+import { resolveUploadUrl } from '../../../../utils/uploads';
 
 export default {
     name: 'UserProfileDialog',
@@ -193,7 +196,7 @@ export default {
         },
         userPermissions() {
             if (!this.user || !this.userRoles || this.userRoles.length === 0) return [];
-            
+
             const permissions = [];
             this.userRoles.forEach(role => {
                 if (role.permissions && role.permissions.length > 0) {
@@ -241,4 +244,3 @@ export default {
     margin-top: 4px;
 }
 </style>
-

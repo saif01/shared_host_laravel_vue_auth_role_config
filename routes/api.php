@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\settings\SettingController;
 use App\Http\Controllers\Api\products\TagController;
 use App\Http\Controllers\Api\upload\UploadController;
 use App\Http\Controllers\Api\users\UserController;
-use App\Http\Controllers\Api\logs\VisitorLogController;
 use App\Http\Controllers\Api\newsletters\NewsletterController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Public\NewsletterController as PublicNewsletterController;

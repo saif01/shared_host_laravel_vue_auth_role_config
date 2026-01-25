@@ -304,11 +304,11 @@
 </template>
 
 <script>
-import adminPaginationMixin from '../../../mixins/adminPaginationMixin';
+import commonMixin from '../../../mixins/commonMixin';
 import moment from 'moment';
 
 export default {
-    mixins: [adminPaginationMixin],
+    mixins: [commonMixin],
     data() {
         return {
             logs: [],

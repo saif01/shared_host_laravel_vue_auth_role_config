@@ -11,7 +11,7 @@
         <v-card class="mb-4">
             <v-card-text>
                 <v-row>
-                    <v-col cols="12" md="4">
+                    <v-col cols="12" md="2">
                         <v-select v-model="perPage" :items="perPageOptions" label="Items per page"
                             prepend-inner-icon="mdi-format-list-numbered" variant="outlined" density="compact"
                             @update:model-value="onPerPageChange"></v-select>
@@ -21,7 +21,7 @@
                             prepend-inner-icon="mdi-filter" variant="outlined" density="compact" clearable
                             @update:model-value="loadRoles"></v-select>
                     </v-col>
-                    <v-col cols="12" md="4">
+                    <v-col cols="12" md="6">
                         <v-text-field v-model="search" label="Search roles" prepend-inner-icon="mdi-magnify"
                             variant="outlined" density="compact" clearable
                             @update:model-value="loadRoles"></v-text-field>
@@ -135,179 +135,20 @@
         </v-card>
 
         <!-- Role Dialog -->
-        <v-dialog v-model="dialog" max-width="600" persistent>
-            <v-card>
-                <v-card-title>
-                    {{ editingRole ? 'Edit Role' : 'Add New Role' }}
-                </v-card-title>
-                <v-card-text>
-                    <v-alert v-if="editingRole && editingRole.is_system" type="info" variant="tonal" class="mb-4">
-                        <strong>System Role:</strong> This is a system role. Core properties (name, slug, description,
-                        status, order) cannot be modified. Only permissions can be updated using the permissions button.
-                    </v-alert>
-                    <v-form ref="roleForm" @submit.prevent="saveRole">
-                        <v-text-field v-model="form.name" label="Role Name" :rules="[rules.required]" required
-                            hint="Display name for the role" persistent-hint class="mb-4"
-                            :disabled="editingRole && editingRole.is_system"
-                            @blur="autoGenerateSlugFromName"></v-text-field>
-
-                        <v-text-field v-model="form.slug" label="Slug"
-                            hint="URL-friendly identifier (auto-generated if empty)" persistent-hint class="mb-4"
-                            :disabled="editingRole && editingRole.is_system"></v-text-field>
-
-                        <v-textarea v-model="form.description" label="Description" hint="Brief description of the role"
-                            persistent-hint rows="2" class="mb-4"
-                            :disabled="editingRole && editingRole.is_system"></v-textarea>
-
-                        <v-text-field v-model.number="form.order" label="Order" type="number"
-                            hint="Display order (lower numbers first)" persistent-hint class="mb-4"
-                            :disabled="editingRole && editingRole.is_system"></v-text-field>
-
-                        <v-switch v-model="form.is_active" label="Active"
-                            hint="Inactive roles cannot be assigned to users" persistent-hint class="mb-4"
-                            :disabled="editingRole && editingRole.is_system"></v-switch>
-
-                        <!-- Permissions Section -->
-                        <v-divider class="my-4"></v-divider>
-                        <div class="mb-2">
-                            <div class="d-flex justify-space-between align-center mb-2">
-                                <div>
-                                    <h3 class="text-h6 mb-1">Permissions</h3>
-                                    <p class="text-caption text-grey">Select permissions to assign to this role</p>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <v-btn size="small" variant="outlined" @click="selectAllPermissions"
-                                        color="primary">
-                                        Select All
-                                    </v-btn>
-                                    <v-btn size="small" variant="outlined" @click="deselectAllPermissions" color="grey">
-                                        Deselect All
-                                    </v-btn>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Search Filter -->
-                        <v-text-field v-model="permissionSearch" label="Search permissions"
-                            prepend-inner-icon="mdi-magnify" variant="outlined" density="compact" clearable
-                            class="mb-4"></v-text-field>
-
-                        <!-- Permissions List - All Expanded -->
-                        <div v-if="Object.keys(filteredGroupedPermissions).length > 0"
-                            class="permissions-container mb-4">
-                            <div v-for="(permissions, group) in filteredGroupedPermissions" :key="group"
-                                class="permission-group mb-4">
-                                <v-card variant="outlined">
-                                    <v-card-title class="d-flex justify-space-between align-center py-2">
-                                        <div class="d-flex align-center gap-2">
-                                            <span class="text-h6">{{ group.charAt(0).toUpperCase() + group.slice(1)
-                                            }}</span>
-                                            <v-chip size="small" color="primary" variant="flat">
-                                                {{ getSelectedCountInGroup(group) }} / {{ permissions.length }} selected
-                                            </v-chip>
-                                        </div>
-                                        <div class="d-flex gap-1">
-                                            <v-btn size="x-small" variant="text" @click="selectAllInGroup(group)"
-                                                color="primary">
-                                                Select All
-                                            </v-btn>
-                                            <v-btn size="x-small" variant="text" @click="deselectAllInGroup(group)"
-                                                color="grey">
-                                                Clear
-                                            </v-btn>
-                                        </div>
-                                    </v-card-title>
-                                    <v-card-text>
-                                        <v-row v-if="Array.isArray(permissions)">
-                                            <v-col v-for="permission in permissions" :key="permission.id" cols="12"
-                                                md="6" lg="4">
-                                                <v-checkbox :model-value="isFormPermissionSelected(permission.id)"
-                                                    @update:model-value="toggleFormPermission(permission.id)"
-                                                    :label="permission.name" :hint="permission.description"
-                                                    persistent-hint density="comfortable" color="primary">
-                                                    <template v-slot:label>
-                                                        <div>
-                                                            <div class="font-weight-medium">{{ permission.name }}</div>
-                                                            <div v-if="permission.description"
-                                                                class="text-caption text-grey">
-                                                                {{ permission.description }}
-                                                            </div>
-                                                        </div>
-                                                    </template>
-                                                </v-checkbox>
-                                            </v-col>
-                                        </v-row>
-                                    </v-card-text>
-                                </v-card>
-                            </div>
-                        </div>
-                        <v-alert v-else type="info" variant="tonal" class="mb-4">
-                            <div v-if="permissionSearch">
-                                No permissions found matching "{{ permissionSearch }}"
-                            </div>
-                            <div v-else>
-                                No permissions available. Please ensure permissions are loaded.
-                            </div>
-                        </v-alert>
-                    </v-form>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="closeDialog" variant="text">Cancel</v-btn>
-                    <v-btn v-if="editingRole && editingRole.is_system" @click="closeDialog" color="primary">
-                        Close
-                    </v-btn>
-                    <v-btn v-else @click="saveRole" color="primary" :loading="saving">
-                        {{ editingRole ? 'Update' : 'Create' }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <RoleDialog ref="roleDialog" v-model="dialog" :editing-role="editingRole" :saving="saving" :form="form"
+            :rules="rules" v-model:permission-search="permissionSearch"
+            :filtered-grouped-permissions="filteredGroupedPermissions"
+            :get-selected-count-in-group="getSelectedCountInGroup"
+            :is-form-permission-selected="isFormPermissionSelected" :toggle-form-permission="toggleFormPermission"
+            :select-all-permissions="selectAllPermissions" :deselect-all-permissions="deselectAllPermissions"
+            :select-all-in-group="selectAllInGroup" :deselect-all-in-group="deselectAllInGroup"
+            :auto-generate-slug-from-name="autoGenerateSlugFromName" @save="saveRole" @close="closeDialog" />
 
         <!-- Permissions Dialog -->
-        <v-dialog v-model="permissionDialog" max-width="800" persistent>
-            <v-card>
-                <v-card-title>
-                    Manage Permissions - {{ selectedRole?.name }}
-                    <v-chip v-if="selectedRole?.is_system" color="warning" size="small" class="ml-2">
-                        System Role
-                    </v-chip>
-                </v-card-title>
-                <v-card-text>
-                    <div v-if="loadingPermissions" class="text-center py-4">
-                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                    </div>
-                    <div v-else>
-                        <div v-if="Object.keys(safeGroupedPermissions).length === 0" class="text-center py-4">
-                            <p class="text-grey">No permissions available</p>
-                        </div>
-                        <div v-else>
-                            <div v-for="(permissions, group) in safeGroupedPermissions" :key="group" class="mb-6">
-                                <h3 class="text-h6 mb-3">{{ group.charAt(0).toUpperCase() + group.slice(1) }}</h3>
-                                <v-row v-if="Array.isArray(permissions)">
-                                    <v-col v-for="permission in permissions" :key="permission.id" cols="12" md="6">
-                                        <v-checkbox :model-value="isPermissionSelected(permission.id)"
-                                            @update:model-value="togglePermission(permission.id)"
-                                            :label="permission.name" :hint="permission.description" persistent-hint
-                                            density="compact"></v-checkbox>
-                                    </v-col>
-                                </v-row>
-                                <v-alert v-else type="warning" variant="tonal" class="mt-2">
-                                    Invalid permission group structure
-                                </v-alert>
-                            </div>
-                        </div>
-                    </div>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="closePermissionDialog" variant="text">Cancel</v-btn>
-                    <v-btn @click="savePermissions" color="primary" :loading="savingPermissions">
-                        Save Permissions
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <RolePermissionsDialog v-model="permissionDialog" :selected-role="selectedRole"
+            :loading-permissions="loadingPermissions" :saving-permissions="savingPermissions"
+            :safe-grouped-permissions="safeGroupedPermissions" :is-permission-selected="isPermissionSelected"
+            :toggle-permission="togglePermission" @save="savePermissions" @close="closePermissionDialog" />
     </div>
 </template>
 
@@ -329,10 +170,16 @@
  * - Real-time permission filtering
  */
 
-import adminPaginationMixin from '../../../mixins/adminPaginationMixin';
+import commonMixin from '../../../mixins/commonMixin';
+import RoleDialog from './dialogs/RoleDialog.vue';
+import RolePermissionsDialog from './dialogs/RolePermissionsDialog.vue';
 
 export default {
-    mixins: [adminPaginationMixin],
+    components: {
+        RoleDialog,
+        RolePermissionsDialog
+    },
+    mixins: [commonMixin],
     data() {
         return {
             // List of all roles fetched from API
@@ -697,9 +544,7 @@ export default {
                 permissions: []
             };
             // Reset form validation errors
-            if (this.$refs.roleForm) {
-                this.$refs.roleForm.resetValidation();
-            }
+            this.$refs.roleDialog?.resetValidation?.();
         },
 
         /**
@@ -737,12 +582,12 @@ export default {
          */
         async saveRole() {
             // Validate form first
-            if (!this.$refs.roleForm) {
+            if (!this.$refs.roleDialog?.validateForm) {
                 this.showError('Form reference not found');
                 return;
             }
 
-            if (!this.$refs.roleForm.validate()) {
+            if (!this.$refs.roleDialog.validateForm()) {
                 return;
             }
 

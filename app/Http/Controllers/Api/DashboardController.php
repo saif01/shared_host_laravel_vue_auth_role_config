@@ -7,7 +7,6 @@ use App\Models\Lead;
 use App\Models\LoginLog;
 use App\Models\Product;
 use App\Models\Service;
-use App\Models\VisitorLog;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -18,9 +17,6 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
-        $timeRange = $request->get('time_range', '7d');
-        $startDate = $this->getStartDateForRange($timeRange);
-
         // Basic stats
         $servicesCount = Service::count();
         $productsCount = Product::count();
@@ -42,11 +38,8 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Visitor statistics
-        $visitorStats = $this->getVisitorStatistics($startDate);
-
         // Login statistics
-        $loginStats = $this->getLoginStatistics($startDate);
+        $loginStats = $this->getLoginStatistics();
 
         return response()->json([
             'stats' => [
@@ -55,67 +48,14 @@ class DashboardController extends Controller
                 'leads' => $newLeadsCount,
             ],
             'recent_leads' => $recentLeads,
-            'visitor_stats' => $visitorStats,
             'login_stats' => $loginStats,
         ]);
     }
 
     /**
-     * Get visitor statistics
-     */
-    private function getVisitorStatistics($startDate)
-    {
-        $totalVisits = VisitorLog::count();
-        $botVisits = VisitorLog::where('is_bot', true)->count();
-        $humanVisits = VisitorLog::where('is_bot', false)->count();
-
-        // Device type statistics
-        $deviceStats = VisitorLog::selectRaw('device_type, COUNT(*) as count')
-            ->groupBy('device_type')
-            ->pluck('count', 'device_type')
-            ->toArray();
-
-        // Browser statistics
-        $browserStats = VisitorLog::selectRaw('browser, COUNT(*) as count')
-            ->where('is_bot', false)
-            ->groupBy('browser')
-            ->orderByDesc('count')
-            ->limit(10)
-            ->pluck('count', 'browser')
-            ->toArray();
-
-        // Most visited pages
-        $topPages = VisitorLog::selectRaw('url, COUNT(*) as visits')
-            ->where('is_bot', false)
-            ->groupBy('url')
-            ->orderByDesc('visits')
-            ->limit(10)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'url' => $item->url,
-                    'visits' => $item->visits,
-                ];
-            });
-
-        // Time-series trends data
-        $trendsData = $this->getVisitorTrendsData($startDate);
-
-        return [
-            'total' => $totalVisits,
-            'bot_visits' => $botVisits,
-            'human_visits' => $humanVisits,
-            'device_stats' => $deviceStats,
-            'browser_stats' => $browserStats,
-            'top_pages' => $topPages,
-            'trends' => $trendsData,
-        ];
-    }
-
-    /**
      * Get login statistics
      */
-    private function getLoginStatistics($startDate)
+    private function getLoginStatistics()
     {
         $totalLogs = LoginLog::count();
         $successfulLogins = LoginLog::where('status', 'success')->count();
@@ -126,62 +66,6 @@ class DashboardController extends Controller
             'successful' => $successfulLogins,
             'failed' => $failedLogins,
         ];
-    }
-
-    /**
-     * Get visitor trends data (time-series)
-     */
-    private function getVisitorTrendsData($startDate)
-    {
-        $days = [];
-        $totalVisits = [];
-        $humanVisits = [];
-
-        $currentDate = \Carbon\Carbon::parse($startDate);
-        $endDate = now();
-
-        while ($currentDate->lte($endDate)) {
-            $dateStr = $currentDate->format('Y-m-d');
-            $days[] = $dateStr;
-
-            // Get visits for this day
-            $dayStart = $currentDate->copy()->startOfDay();
-            $dayEnd = $currentDate->copy()->endOfDay();
-
-            $total = VisitorLog::whereBetween('created_at', [$dayStart, $dayEnd])->count();
-            $human = VisitorLog::where('is_bot', false)
-                ->whereBetween('created_at', [$dayStart, $dayEnd])
-                ->count();
-
-            $totalVisits[] = $total;
-            $humanVisits[] = $human;
-
-            $currentDate->addDay();
-        }
-
-        return [
-            'labels' => $days,
-            'total' => $totalVisits,
-            'human' => $humanVisits,
-        ];
-    }
-
-    /**
-     * Get start date based on time range
-     */
-    private function getStartDateForRange($timeRange)
-    {
-        switch ($timeRange) {
-            case '30d':
-                return now()->subDays(30);
-            case '90d':
-                return now()->subDays(90);
-            case '1y':
-                return now()->subYear();
-            case '7d':
-            default:
-                return now()->subDays(7);
-        }
     }
 }
 

@@ -26,12 +26,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
             'online' => \App\Http\Middleware\OnlineCheckerMiddleware::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'track.visitors' => \App\Http\Middleware\TrackVisitors::class,
-        ]);
-        
-        // Apply visitor tracking middleware to web routes
-        $middleware->web(append: [
-            \App\Http\Middleware\TrackVisitors::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

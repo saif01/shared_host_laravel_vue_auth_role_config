@@ -11,7 +11,7 @@
         <v-card class="mb-4">
             <v-card-text>
                 <v-row>
-                    <v-col cols="12" md="4">
+                    <v-col cols="12" md="2">
                         <v-select v-model="perPage" :items="perPageOptions" label="Items per page"
                             prepend-inner-icon="mdi-format-list-numbered" variant="outlined" density="compact"
                             @update:model-value="onPerPageChange"></v-select>
@@ -20,7 +20,7 @@
                         <v-select v-model="roleFilter" :items="roleOptions" label="Filter by Role" variant="outlined"
                             density="compact" clearable @update:model-value="loadUsers"></v-select>
                     </v-col>
-                    <v-col cols="12" md="4">
+                    <v-col cols="12" md="6">
                         <v-text-field v-model="search" label="Search by name, email, phone, city, or country"
                             prepend-inner-icon="mdi-magnify" variant="outlined" density="compact" clearable
                             @input="loadUsers"></v-text-field>
@@ -113,7 +113,7 @@
                                         <v-avatar size="32" color="primary">
                                             <v-img v-if="user.avatar" :src="user.avatar" :alt="user.name"></v-img>
                                             <span v-else class="text-white">{{ user.name.charAt(0).toUpperCase()
-                                                }}</span>
+                                            }}</span>
                                         </v-avatar>
                                         {{ user.name }}
                                     </div>
@@ -130,7 +130,7 @@
                                     <div v-if="user.city || user.country" class="d-flex flex-column">
                                         <span v-if="user.city" class="text-body-2">{{ user.city }}</span>
                                         <span v-if="user.country" class="text-caption text-grey">{{ user.country
-                                        }}</span>
+                                            }}</span>
                                         <span v-if="!user.city && !user.country" class="text-caption text-grey">-</span>
                                     </div>
                                     <span v-else class="text-caption text-grey">-</span>
@@ -188,185 +188,11 @@
         </v-card>
 
         <!-- User Dialog -->
-        <v-dialog v-model="dialog" max-width="900" scrollable persistent>
-            <v-card>
-                <v-card-title>
-                    {{ editingUser ? 'Edit User' : 'Add New User' }}
-                </v-card-title>
-                <v-card-text class="pa-0">
-                    <v-form ref="form" @submit.prevent="saveUser">
-                        <v-tabs v-model="activeTab" bg-color="grey-lighten-4">
-                            <v-tab value="basic">Basic Information</v-tab>
-                            <v-tab value="profile">Profile Information</v-tab>
-                            <v-tab value="security">Security</v-tab>
-                        </v-tabs>
-
-                        <v-window v-model="activeTab">
-                            <!-- Basic Information Tab -->
-                            <v-window-item value="basic">
-                                <div class="pa-6">
-                                    <v-text-field v-model="form.name" label="Full Name" :rules="[rules.required]"
-                                        required class="mb-4"></v-text-field>
-
-                                    <v-text-field v-model="form.email" label="Email" type="email"
-                                        :rules="[rules.required, rules.email]" required class="mb-4"></v-text-field>
-
-                                    <v-select v-model="form.role_ids" :items="roles" item-title="label"
-                                        item-value="value" label="Roles" :rules="[rules.required]" required multiple
-                                        chips class="mb-4">
-                                        <template v-slot:item="{ props, item }">
-                                            <v-list-item v-bind="props">
-                                                <template v-slot:title>
-                                                    {{ item.raw.label }}
-                                                    <v-chip v-if="item.raw.is_system" size="x-small" color="warning"
-                                                        class="ml-2">
-                                                        System
-                                                    </v-chip>
-                                                </template>
-                                                <template v-slot:subtitle>
-                                                    {{ item.raw.description }}
-                                                </template>
-                                            </v-list-item>
-                                        </template>
-                                        <template v-slot:selection="{ item, index }">
-                                            <v-chip v-if="index < 2" size="small" class="mr-1">
-                                                {{ item.raw.label }}
-                                            </v-chip>
-                                            <span v-if="index === 2" class="text-grey text-caption align-self-center">
-                                                (+{{ form.role_ids.length - 2 }} others)
-                                            </span>
-                                        </template>
-                                    </v-select>
-
-                                    <!-- Avatar Upload Section -->
-                                    <div class="mb-4">
-                                        <div class="text-subtitle-2 font-weight-medium mb-2">Avatar</div>
-
-                                        <!-- Avatar Preview -->
-                                        <div v-if="form.avatar" class="mb-3 text-center">
-                                            <v-avatar size="80" class="mb-2">
-                                                <v-img :src="form.avatar ? resolveImageUrl(form.avatar) : ''"
-                                                    alt="Avatar Preview"></v-img>
-                                            </v-avatar>
-                                            <div>
-                                                <v-btn size="small" variant="text" color="error"
-                                                    prepend-icon="mdi-delete" @click="clearAvatar">Remove Avatar</v-btn>
-                                            </div>
-                                        </div>
-
-                                        <!-- File Upload -->
-                                        <v-file-input v-model="avatarFile" label="Upload Avatar" variant="outlined"
-                                            density="comfortable" color="primary" accept="image/*"
-                                            prepend-icon="mdi-image"
-                                            hint="Upload an avatar image (JPG, PNG, GIF, WebP - Max 5MB). Recommended size: 200x200px"
-                                            persistent-hint show-size @update:model-value="handleAvatarUpload"
-                                            class="mb-3">
-                                            <template v-slot:append-inner v-if="uploadingAvatar">
-                                                <v-progress-circular indeterminate size="20"
-                                                    color="primary"></v-progress-circular>
-                                            </template>
-                                        </v-file-input>
-
-                                        <!-- Or Enter URL -->
-                                        <v-text-field v-model="form.avatar" label="Or Enter Avatar URL"
-                                            variant="outlined" density="comfortable" color="primary"
-                                            hint="Enter a direct URL to the avatar image" persistent-hint
-                                            prepend-inner-icon="mdi-link">
-                                            <template v-slot:append-inner v-if="form.avatar && !avatarFile">
-                                                <v-btn icon="mdi-open-in-new" variant="text" size="small"
-                                                    @click="window.open(resolveImageUrl(form.avatar), '_blank')"></v-btn>
-                                            </template>
-                                        </v-text-field>
-                                    </div>
-                                </div>
-                            </v-window-item>
-
-                            <!-- Profile Information Tab -->
-                            <v-window-item value="profile">
-                                <div class="pa-6">
-                                    <v-row>
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model="form.phone" label="Phone Number" variant="outlined"
-                                                prepend-inner-icon="mdi-phone" hint="e.g., +8801707080401"
-                                                persistent-hint></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model="form.date_of_birth" label="Date of Birth" type="date"
-                                                variant="outlined" prepend-inner-icon="mdi-calendar"></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12" md="6">
-                                            <v-select v-model="form.gender" :items="genderOptions" label="Gender"
-                                                variant="outlined" prepend-inner-icon="mdi-gender-male-female"
-                                                clearable></v-select>
-                                        </v-col>
-                                        <v-col cols="12">
-                                            <v-textarea v-model="form.address" label="Address" variant="outlined"
-                                                rows="2" prepend-inner-icon="mdi-map-marker" hint="Street address"
-                                                persistent-hint></v-textarea>
-                                        </v-col>
-                                        <v-col cols="12" md="4">
-                                            <v-text-field v-model="form.city" label="City" variant="outlined"
-                                                prepend-inner-icon="mdi-city"></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12" md="4">
-                                            <v-text-field v-model="form.state" label="State/Province" variant="outlined"
-                                                prepend-inner-icon="mdi-map"></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12" md="4">
-                                            <v-text-field v-model="form.country" label="Country" variant="outlined"
-                                                prepend-inner-icon="mdi-earth"></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12" md="6">
-                                            <v-text-field v-model="form.postal_code" label="Postal Code"
-                                                variant="outlined" prepend-inner-icon="mdi-mailbox"></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12">
-                                            <v-textarea v-model="form.bio" label="Bio/Description" variant="outlined"
-                                                rows="4" prepend-inner-icon="mdi-text"
-                                                hint="Brief description about the user" persistent-hint
-                                                :counter="1000"></v-textarea>
-                                        </v-col>
-                                    </v-row>
-                                </div>
-                            </v-window-item>
-
-                            <!-- Security Tab -->
-                            <v-window-item value="security">
-                                <div class="pa-6">
-                                    <v-text-field v-model="form.password" label="Password"
-                                        :type="showPassword ? 'text' : 'password'"
-                                        :rules="editingUser ? [] : [rules.required, rules.minLength]"
-                                        :required="!editingUser" hint="Leave blank to keep current password"
-                                        persistent-hint class="mb-4" prepend-inner-icon="mdi-lock">
-                                        <template v-slot:append-inner>
-                                            <v-btn icon variant="text" size="small"
-                                                @click="showPassword = !showPassword">
-                                                <v-icon>{{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-                                            </v-btn>
-                                        </template>
-                                    </v-text-field>
-
-                                    <v-text-field v-if="!editingUser || form.password"
-                                        v-model="form.password_confirmation" label="Confirm Password"
-                                        :type="showPasswordConfirmation ? 'text' : 'password'" :rules="form.password ? [
-                                            () => !!form.password_confirmation || 'Please confirm your password',
-                                            () => form.password_confirmation === form.password || 'Passwords do not match'
-                                        ] : []" :required="!!form.password"
-                                        prepend-inner-icon="mdi-lock-check"></v-text-field>
-                                </div>
-                            </v-window-item>
-                        </v-window>
-                    </v-form>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="closeDialog" variant="text">Cancel</v-btn>
-                    <v-btn @click="saveUser" color="primary" :loading="saving">
-                        {{ editingUser ? 'Update' : 'Create' }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <UserDialog ref="userDialog" v-model="dialog" :editing-user="editingUser" :saving="saving" :form="form"
+            :roles="roles" :rules="rules" v-model:active-tab="activeTab" :gender-options="genderOptions"
+            v-model:show-password="showPassword" v-model:show-password-confirmation="showPasswordConfirmation"
+            v-model:avatar-file="avatarFile" :uploading-avatar="uploadingAvatar" :resolve-image-url="resolveImageUrl"
+            @save="saveUser" @close="closeDialog" @clear-avatar="clearAvatar" @avatar-upload="handleAvatarUpload" />
 
         <!-- User Profile View Dialog -->
         <UserProfileDialog v-model="profileDialogVisible" :user="selectedUser" />
@@ -374,15 +200,18 @@
 </template>
 
 <script>
-import adminPaginationMixin from '../../../mixins/adminPaginationMixin';
+import commonMixin from '../../../mixins/commonMixin';
 import { normalizeUploadPath, resolveUploadUrl } from '../../../utils/uploads';
-import UserProfileDialog from './UserProfileDialog.vue';
+import { formatDate as formatDateUtil } from '../../../utils/formatters';
+import UserDialog from './dialogs/UserDialog.vue';
+import UserProfileDialog from './dialogs/UserProfileDialog.vue';
 
 export default {
     components: {
+        UserDialog,
         UserProfileDialog
     },
-    mixins: [adminPaginationMixin],
+    mixins: [commonMixin],
     data() {
         return {
             users: [],
@@ -577,9 +406,7 @@ export default {
             this.showPassword = false;
             this.showPasswordConfirmation = false;
             this.avatarFile = null;
-            if (this.$refs.form) {
-                this.$refs.form.resetValidation();
-            }
+            this.$refs.userDialog?.resetValidation?.();
         },
         async handleAvatarUpload() {
             if (!this.avatarFile) {
@@ -669,7 +496,10 @@ export default {
                 return;
             }
 
-            if (!this.$refs.form.validate()) {
+            const isValid = this.$refs.userDialog?.validateForm
+                ? this.$refs.userDialog.validateForm()
+                : true;
+            if (!isValid) {
                 return;
             }
 
@@ -785,6 +615,14 @@ export default {
         },
         resolveImageUrl(value) {
             return resolveUploadUrl(value);
+        },
+        /**
+         * Format date using formatters utility
+         * @param {string|Date} date - Date to format
+         * @returns {string} Formatted date string in DD/MM/YYYY format
+         */
+        formatDate(date) {
+            return formatDateUtil(date, 'DD/MM/YYYY');
         },
         /**
          * View user profile
