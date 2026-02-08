@@ -96,7 +96,7 @@ export default {
             if (this.brandingLogo) {
                 return resolveUploadUrl(this.brandingLogo);
             }
-            return null; // Return null to let v-img handle the missing image gracefully
+            return "/assets/logo/logo.png"; // Return null to let v-img handle the missing image gracefully
         }
     },
     async mounted() {
@@ -146,13 +146,46 @@ export default {
         async loadBrandingSettings() {
             try {
                 // Use public endpoint since user is not authenticated yet
-                const response = await this.$axios.get('/api/openapi/settings?group=branding');
-                if (response.data && response.data.logo) {
-                    this.brandingLogo = response.data.logo;
+                const metaApiBase = document.querySelector('meta[name="api-base-url"]')?.getAttribute('content');
+                const apiBase = metaApiBase ? metaApiBase.replace(/\/+$/, '') + '/' : '';
+                const urls = apiBase
+                    ? [`${apiBase}open/settings`, `${apiBase}public/settings`]
+                    : ['api/v1/open/settings', 'api/v1/public/settings'];
+
+                let response = null;
+                let lastError = null;
+
+                for (const url of urls) {
+                    try {
+                        response = await this.$axios.get(url, {
+                            params: { group: 'branding' }
+                        });
+                        break;
+                    } catch (error) {
+                        lastError = error;
+                        if (error?.response?.status !== 404) {
+                            throw error;
+                        }
+                    }
+                }
+
+                if (!response) {
+                    throw lastError || new Error('Branding settings endpoint not found');
+                }
+
+                if (response.data) {
+                    if (response.data.logo) {
+                        this.brandingLogo = response.data.logo;
+                    } else if (response.data.branding?.logo?.value) {
+                        this.brandingLogo = response.data.branding.logo.value;
+                    }
                 }
             } catch (error) {
-                console.error('Error loading branding settings:', error);
-                // Don't show error to user, just use default logo
+                // Some environments may not expose the public branding route.
+                // Fallback silently to the default logo in that case.
+                if (error?.response?.status !== 404 && error?.message !== 'Branding settings endpoint not found') {
+                    console.error('Error loading branding settings:', error);
+                }
             }
         }
     }

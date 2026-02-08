@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Lead;
 use App\Models\LoginLog;
-use App\Models\Product;
-use App\Models\Service;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -17,28 +15,37 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
-        // Basic stats
-        $servicesCount = Service::count();
-        $productsCount = Product::count();
-        $newLeadsCount = Lead::where('status', 'new')->count();
+        // Stats from existing models only (Service, Product, Lead models may not exist in this app)
+        $servicesCount = 0;
+        $productsCount = 0;
+        $newLeadsCount = 0;
+        $recentLeads = [];
 
-        // Recent leads (last 10)
-        $recentLeads = Lead::orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get()
-            ->map(function ($lead) {
-                return [
-                    'id' => $lead->id,
-                    'name' => $lead->name,
-                    'email' => $lead->email,
-                    'type' => $lead->type,
-                    'status' => $lead->status,
-                    'is_read' => $lead->is_read,
-                    'created_at' => $lead->created_at->toISOString(),
-                ];
-            });
+        if (file_exists(app_path('Models/Service.php'))) {
+            $servicesCount = \App\Models\Service::count();
+        }
+        if (file_exists(app_path('Models/Product.php'))) {
+            $productsCount = \App\Models\Product::count();
+        }
+        if (file_exists(app_path('Models/Lead.php'))) {
+            $newLeadsCount = \App\Models\Lead::where('status', 'new')->count();
+            $recentLeads = \App\Models\Lead::orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get()
+                ->map(function ($lead) {
+                    return [
+                        'id' => $lead->id,
+                        'name' => $lead->name,
+                        'email' => $lead->email,
+                        'type' => $lead->type,
+                        'status' => $lead->status,
+                        'is_read' => $lead->is_read,
+                        'created_at' => $lead->created_at->toISOString(),
+                    ];
+                })
+                ->all();
+        }
 
-        // Login statistics
         $loginStats = $this->getLoginStatistics();
 
         return response()->json([
@@ -46,6 +53,7 @@ class DashboardController extends Controller
                 'services' => $servicesCount,
                 'products' => $productsCount,
                 'leads' => $newLeadsCount,
+                'users' => User::count(),
             ],
             'recent_leads' => $recentLeads,
             'login_stats' => $loginStats,

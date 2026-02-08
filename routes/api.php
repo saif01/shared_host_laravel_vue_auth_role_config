@@ -76,6 +76,7 @@ Route::prefix('v1')->group(function () {
     // Public routes
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::get('/public/settings', [SettingController::class, 'publicIndex']);
+    Route::get('/open/settings', [SettingController::class, 'publicIndex']);
 
     // Protected admin routes - requires authentication and admin access
     Route::middleware(['auth:sanctum', 'admin'])->group(function () {
